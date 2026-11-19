@@ -207,8 +207,12 @@ void paintWordmark(QPainter &p, const QRectF &r, double pt) {
     const double w = fm.horizontalAdvance(word);
     text.addText(r.center().x() - w / 2, r.center().y() + fm.ascent() / 2 - fm.descent() / 2, f, word);
     QLinearGradient g(0, r.top(), 0, r.bottom());
-    g.setColorAt(0.0, kBone); g.setColorAt(0.55, kSilver); g.setColorAt(1.0, QColor("#8A8394"));
-    p.setPen(QPen(QColor(11, 9, 13, 160), pt * 0.06));
+    if (theme::current().light) {   // dark silver on light themes so it stays readable
+        g.setColorAt(0.0, QColor("#5A5262")); g.setColorAt(1.0, QColor("#2A2230"));
+    } else {
+        g.setColorAt(0.0, kBone); g.setColorAt(0.55, kSilver); g.setColorAt(1.0, QColor("#8A8394"));
+    }
+    p.setPen(QPen(theme::current().light ? QColor(255, 255, 255, 120) : QColor(11, 9, 13, 160), pt * 0.06));
     p.setBrush(g);
     p.drawPath(text);
     p.restore();

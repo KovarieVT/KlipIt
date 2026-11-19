@@ -646,7 +646,8 @@ void Recorder::releaseEncodersIfIdle() {
 // ------------------------------------------------------------------ outputs
 void Recorder::connectOutput(obs_output_t *out, const QString &tag, std::vector<OBSSignal> &sigs) {
     struct Ctx { Recorder *r; QString tag, what; };
-    for (const char *what : {"start", "stop", "saved", "file_changed"}) {
+    const bool replay = tag == "replay";
+    for (const char *what : {"start", "stop", replay ? "saved" : "file_changed"}) {
         auto *ctx = new Ctx{this, tag, QString::fromLatin1(what)};   // tiny, lives for the process so late callbacks stay safe
         sigs.emplace_back(obs_output_get_signal_handler(out), what, [](void *data, calldata_t *cd) {
             auto *c = static_cast<Ctx *>(data);

@@ -186,9 +186,10 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - name: Install dependencies
+        timeout-minutes: 12
         run: |
-          sudo apt-get -o Acquire::Retries=3 update
-          sudo apt-get -o Acquire::Retries=3 install -y --no-install-recommends libobs-dev obs-studio qt6-base-dev qt6-multimedia-dev \
+          sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 update
+          sudo DEBIAN_FRONTEND=noninteractive apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 install -y --no-install-recommends libobs-dev obs-studio qt6-base-dev qt6-multimedia-dev \
             libavformat-dev libavcodec-dev libswscale-dev libavutil-dev libgl1-mesa-dev xvfb ffmpeg ninja-build pkg-config
       - run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo && cmake --build build
       - run: ./build/tests/klipit_unit_tests -platform offscreen

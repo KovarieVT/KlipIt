@@ -17,6 +17,8 @@
 #include <QPainterPath>
 #include <QProcess>
 #include <QUrl>
+#include <QtMath>
+#include <cmath>
 
 namespace kl {
 
