@@ -143,9 +143,10 @@ jobs:
         run: |
           $bin = "${{ github.workspace }}/dist/KlipIt/bin/64bit"
           Copy-Item build/tests/Release/klipit_engine_test.exe $bin
+          Copy-Item "$env:QT_ROOT_DIR\bin\Qt6Test.dll" $bin
           Push-Location $bin
           $log = "$env:RUNNER_TEMP\engine-test.txt"
-          try { & .\klipit_engine_test.exe -platform windows -o "$log,txt" -o "-,txt" } finally { Pop-Location; Remove-Item "$bin/klipit_engine_test.exe" -ErrorAction SilentlyContinue }
+          try { & .\klipit_engine_test.exe -platform windows -o "$log,txt" -o "-,txt" } finally { Pop-Location; Remove-Item "$bin/klipit_engine_test.exe", "$bin/Qt6Test.dll" -ErrorAction SilentlyContinue }
           $text = if (Test-Path $log) { Get-Content $log -Raw } else { "" }
           if ($text -notmatch 'Totals: \d+ passed, 0 failed') { throw "Windows engine test failed, see the log above" }
 

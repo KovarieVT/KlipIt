@@ -20,6 +20,7 @@ QJsonObject Settings::defaults() {
             {"closeToTray", true},
             {"clipSound", true},          // the clip-saved chime, played at 50 % volume
             {"notifications", true},      // the "Clip saved" pop-up
+            {"animations", true},         // splash screen and decorative animations
         }},
         {"appearance", QJsonObject{{"theme", "black"}}},   // black | darkgrey | white | blue | purple
         {"capture", QJsonObject{
@@ -32,7 +33,8 @@ QJsonObject Settings::defaults() {
             {"encoder", "auto"},
             {"codec", "h264"},            // h264 | hevc
             {"cursor", false},
-            {"clipSeconds", 30},
+            {"clipSeconds", 30},          // seconds kept from before you press the hotkey
+            {"postSeconds", 0},           // seconds kept recording after you press it (total is never over 20 minutes)
             {"sessionRecording", false},  // record every game session in full
         }},
         {"audio", QJsonObject{
@@ -45,8 +47,14 @@ QJsonObject Settings::defaults() {
         {"hotkeys", QJsonObject{
             {"saveClip", "F8"},
             {"toggleRecording", "F9"},
+            {"screenshot", "F10"},
             {"toggleBuffer", "Ctrl+F10"},
         }},
+        {"highlights", QJsonObject{
+            {"auto", true},               // save a clip by itself when you get loud (a hype moment)
+            {"thresholdDb", -9},          // how loud counts as hype (dBFS peak)
+        }},
+        {"profiles", QJsonObject{}},      // per-game capture profiles, keyed by program file
         {"games", QJsonObject{{"include", QJsonArray{}}, {"exclude", QJsonArray{}}}},
         {"window", QJsonObject{{"geometry", ""}}},
     };

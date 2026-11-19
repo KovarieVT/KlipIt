@@ -1,0 +1,86 @@
+/* KlipIt — gothic theme. Tokens like @accent are filled in per colour theme. */
+* { font-family: "@uifont"; outline: none; }
+QWidget { color: @text; background: transparent; selection-background-color: @accent; selection-color: @ontext; }
+QMainWindow, #Root { background: @bg; }
+QToolTip { background: @panel; color: @text; border: 1px solid @silverline; padding: 6px 8px; border-radius: 6px; }
+
+/* ---- sidebar ---- */
+#Sidebar { background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 @panel, stop:1 @bg); border-right: 1px solid @silverline; }
+QPushButton#NavButton { background: transparent; text-align: left; padding: 9px 14px; border: 1px solid transparent; border-radius: 9px; color: @muted; font-size: 10.5pt; }
+QPushButton#NavButton:hover { background: @raised; color: @text; }
+QPushButton#NavButton:checked { background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 @accentsoft, stop:1 transparent);
+                     border: 1px solid @silverline; border-left: 3px solid @accent; color: @text; font-weight: 600; }
+#NavGroup { color: @muted; font-size: 8pt; letter-spacing: 2px; padding: 12px 16px 4px 16px; }
+
+/* ---- top bar ---- */
+#TopBar { background: @panel; border-bottom: 1px solid @silverline; }
+#StatusPill { background: @raised; border: 1px solid @silverline; border-radius: 14px; padding: 5px 14px; }
+#StatusText { font-weight: 600; }
+#StatusSub { color: @muted; font-size: 9pt; }
+
+/* ---- headings ---- */
+#PageTitle { font-family: "@headingfont"; font-size: 20pt; color: @text; letter-spacing: 1px; }
+#PageSub { color: @muted; }
+#SectionTitle { font-family: "@headingfont"; font-size: 12.5pt; color: @text; letter-spacing: 1px; }
+#Muted { color: @muted; }
+#Hint { color: @muted; font-size: 9pt; }
+#Warn { color: @accenthover; font-size: 9pt; }
+#BigNumber { font-family: "@headingfont"; font-size: 22pt; color: @text; }
+
+/* ---- cards ---- */
+#Card { background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 @panel, stop:1 @bg);
+        border: 1px solid @silverline; border-radius: 14px; }
+#Hero { background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 @wine, stop:0.6 @panel, stop:1 @bg);
+        border: 1px solid @silverline; border-radius: 16px; }
+
+/* ---- buttons ---- */
+QPushButton { background: @raised; border: 1px solid @silverline; border-radius: 9px; padding: 8px 16px; color: @text; }
+QPushButton:hover { border-color: @silver; }
+QPushButton:pressed { background: @panel; }
+QPushButton:disabled { color: @muted; border-color: @border; }
+QPushButton#Primary { background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 @accent, stop:1 @accentdeep);
+                      border: 1px solid @accenthover; color: @ontext; font-weight: 700; }
+QPushButton#Primary:hover { background: @accenthover; }
+QPushButton#Danger { color: @accenthover; }
+QPushButton#Chip { border-radius: 14px; padding: 5px 13px; color: @muted; }
+QPushButton#Chip:checked { background: @accentsoft; border-color: @accent; color: @text; font-weight: 600; }
+QToolButton { background: transparent; border: 1px solid transparent; border-radius: 8px; padding: 5px; }
+QToolButton:hover { background: @raised; border-color: @silverline; }
+
+/* ---- inputs ---- */
+QLineEdit, QSpinBox, QComboBox, QKeySequenceEdit, QTimeEdit {
+    background: @raised; border: 1px solid @silverline; border-radius: 8px; padding: 6px 9px; min-height: 18px; }
+QLineEdit:focus, QSpinBox:focus, QComboBox:focus, QKeySequenceEdit:focus { border-color: @accent; }
+QComboBox::drop-down { border: none; width: 22px; }
+QComboBox QAbstractItemView { background: @panel; border: 1px solid @silverline; selection-background-color: @accentsoft; padding: 4px; }
+QSpinBox::up-button, QSpinBox::down-button { width: 16px; border: none; }
+QCheckBox { spacing: 9px; }
+QCheckBox::indicator { width: 34px; height: 18px; border-radius: 9px; background: @border; border: 1px solid @silverline; }
+QCheckBox::indicator:checked { background: @accent; border-color: @accenthover; }
+QRadioButton::indicator { width: 14px; height: 14px; border-radius: 8px; border: 1px solid @silver; background: @raised; }
+QRadioButton::indicator:checked { background: @accent; border-color: @accenthover; }
+
+QSlider::groove:horizontal { height: 4px; background: @border; border-radius: 2px; }
+QSlider::sub-page:horizontal { background: @accent; border-radius: 2px; }
+QSlider::handle:horizontal { width: 14px; height: 14px; margin: -6px 0; border-radius: 7px; background: @silver; border: 1px solid @bg; }
+QProgressBar { background: @raised; border: 1px solid @silverline; border-radius: 6px; height: 10px; text-align: center; color: transparent; }
+QProgressBar::chunk { background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 @accentdeep, stop:1 @accent); border-radius: 5px; }
+
+/* ---- lists & scrolling ---- */
+QListView, QTreeView, QTableView { background: transparent; border: none; }
+QListView::item:selected { background: transparent; }
+QScrollArea { border: none; background: transparent; }
+QScrollBar:vertical { width: 10px; background: transparent; margin: 2px; }
+QScrollBar::handle:vertical { background: @border; border-radius: 4px; min-height: 30px; }
+QScrollBar::handle:vertical:hover { background: @silverline; }
+QScrollBar:horizontal { height: 10px; background: transparent; margin: 2px; }
+QScrollBar::handle:horizontal { background: @border; border-radius: 4px; min-width: 30px; }
+QScrollBar::add-line, QScrollBar::sub-line { width: 0; height: 0; }
+QScrollBar::add-page, QScrollBar::sub-page { background: none; }
+
+QMenu { background: @panel; border: 1px solid @silverline; border-radius: 8px; padding: 5px; }
+QMenu::item { padding: 6px 22px 6px 12px; border-radius: 5px; }
+QMenu::item:selected { background: @accentsoft; }
+QMenu::separator { height: 1px; background: @border; margin: 4px 6px; }
+QMessageBox, QDialog { background: @bg; }
+#VideoArea { background: #000; border: 1px solid @silverline; border-radius: 12px; }

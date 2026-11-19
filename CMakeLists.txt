@@ -65,7 +65,7 @@ target_link_libraries(klipit_core PUBLIC
 
 if(WIN32)
     target_compile_definitions(klipit_core PUBLIC NOMINMAX WIN32_LEAN_AND_MEAN UNICODE _UNICODE)
-    target_link_libraries(klipit_core PUBLIC dbghelp user32 dwmapi)
+    target_link_libraries(klipit_core PUBLIC dbghelp user32 dwmapi psapi version)
 endif()
 if(MSVC)
     target_compile_options(klipit_core PUBLIC /W4 /permissive- /utf-8 /wd4100 /wd4996 /Zi)

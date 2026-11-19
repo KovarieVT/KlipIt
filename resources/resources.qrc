@@ -1,0 +1,11 @@
+<RCC>
+  <qresource prefix="/">
+    <file>theme/klipit.qss</file>
+    <file>fonts/Cinzel-Regular.ttf</file>
+    <file>fonts/Cinzel-Bold.ttf</file>
+    <file>fonts/Inter-Regular.ttf</file>
+    <file>fonts/Inter-Bold.ttf</file>
+    <file>fonts/CormorantGaramond-SemiBold.ttf</file>
+    <file>sounds/clip.wav</file>
+  </qresource>
+</RCC>
