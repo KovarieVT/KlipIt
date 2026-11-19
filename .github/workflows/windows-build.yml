@@ -1,0 +1,194 @@
+# Builds KlipIt for Windows on a GitHub-hosted runner:
+#   1. OBS Studio's capture engine (libobs + capture/encoder plugins) from source, cached
+#   2. KlipIt.exe (Qt 6 + libobs), tests
+#   3. KlipIt-<version>-Setup.exe (Inno Setup installer wizard) + portable zip
+name: Windows build
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.event_name == 'pull_request' && format('pr-{0}', github.ref) || format('run-{0}', github.run_id) }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  OBS_VERSION: "32.2.2"      # capture engine version; bump deliberately
+  QT_VERSION: "6.8.3"
+
+jobs:
+  windows-x64:
+    runs-on: windows-2025-vs2026
+    timeout-minutes: 150
+    steps:
+      - name: Checkout KlipIt
+        uses: actions/checkout@v6
+        with: { path: klipit }
+
+      - name: Version
+        id: ver
+        shell: pwsh
+        run: |
+          $v = (Select-String -Path klipit/CMakeLists.txt -Pattern 'set\(APP_VERSION\s+"([^"]+)"').Matches[0].Groups[1].Value
+          if ($env:GITHUB_REF -like 'refs/tags/v*') { $v = $env:GITHUB_REF_NAME.TrimStart('v') }
+          "version=$v" >> $env:GITHUB_OUTPUT
+
+      # ------------------------------------------------------------ capture engine
+      - name: Restore engine build
+        id: obscache
+        uses: actions/cache/restore@v5
+        with:
+          path: obs-dist
+          key: klipit-obs-${{ env.OBS_VERSION }}-v1
+
+      - name: Checkout OBS Studio ${{ env.OBS_VERSION }}
+        if: steps.obscache.outputs.cache-hit != 'true'
+        uses: actions/checkout@v6
+        with:
+          repository: obsproject/obs-studio
+          ref: ${{ env.OBS_VERSION }}
+          path: obs-studio
+          submodules: recursive
+
+      - name: Build libobs + engine plugins
+        if: steps.obscache.outputs.cache-hit != 'true'
+        working-directory: obs-studio
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'; $PSNativeCommandUseErrorActionPreference = $true
+          $dist = "${{ github.workspace }}/obs-dist"
+          cmake --preset windows-x64 -DENABLE_FRONTEND=OFF -DENABLE_BROWSER=OFF -DENABLE_SCRIPTING=OFF -DENABLE_WEBSOCKET=OFF
+          cmake --build --preset windows-x64 --config RelWithDebInfo
+          cmake --install build_x64 --config RelWithDebInfo --prefix $dist
+          cmake --install build_x64 --config RelWithDebInfo --prefix $dist --component Development
+          # OBS only bundles its third-party runtime DLLs (FFmpeg, x264, ...) with its own app, so copy them.
+          $deps = Get-ChildItem .deps -Directory | Where-Object { $_.Name -like 'obs-deps-*-x64' -and $_.Name -notlike '*qt*' }
+          if (-not $deps) { throw "obs-deps folder not found in .deps" }
+          New-Item -ItemType Directory -Force "$dist/ffmpeg/include", "$dist/ffmpeg/lib" | Out-Null
+          foreach ($d in $deps) {
+            Get-ChildItem "$($d.FullName)/bin" -Filter *.dll -ErrorAction SilentlyContinue |
+              Where-Object { $_.Name -notlike 'Qt6*' } | Copy-Item -Destination "$dist/bin/64bit" -Force
+            # FFmpeg headers + import libraries: KlipIt links them for trimming, splitting and thumbnails
+            foreach ($inc in 'libavformat','libavcodec','libavutil','libswscale','libswresample') {
+              if (Test-Path "$($d.FullName)/include/$inc") { Copy-Item -Recurse -Force "$($d.FullName)/include/$inc" "$dist/ffmpeg/include/" }
+            }
+            Get-ChildItem "$($d.FullName)/lib" -Filter *.lib -ErrorAction SilentlyContinue |
+              Where-Object { $_.Name -match '^(avformat|avcodec|avutil|swscale|swresample)\.lib$' } | Copy-Item -Destination "$dist/ffmpeg/lib" -Force
+          }
+          Get-ChildItem "$dist/ffmpeg/lib" | ForEach-Object { $_.Name }
+          if (-not (Test-Path "$dist/ffmpeg/lib/avformat.lib")) { throw "FFmpeg import libraries not found in obs-deps" }
+          $simde = Get-ChildItem .deps -Recurse -Filter simde-common.h -ErrorAction SilentlyContinue | Select-Object -First 1
+          if ($simde) { Copy-Item -Recurse $simde.Directory.FullName "$dist/include/simde" -Force }
+          else {
+            git clone --depth 1 --branch v0.8.2 https://github.com/simd-everywhere/simde "$env:RUNNER_TEMP/simde"
+            Copy-Item -Recurse "$env:RUNNER_TEMP/simde/simde" "$dist/include/simde" -Force
+          }
+          if (-not (Get-ChildItem $dist -Recurse -Filter libobsConfig.cmake)) { throw "libobs developer package missing after install" }
+
+      # Saved right away, so a later failure never throws away the long engine build.
+      - name: Save engine build
+        if: steps.obscache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v5
+        with:
+          path: obs-dist
+          key: klipit-obs-${{ env.OBS_VERSION }}-v1
+
+      # ------------------------------------------------------------ app
+      - name: Install Qt ${{ env.QT_VERSION }}
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: ${{ env.QT_VERSION }}
+          arch: win64_msvc2022_64
+          modules: qtmultimedia qtimageformats
+          cache: true
+
+      - name: Configure & build KlipIt
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'; $PSNativeCommandUseErrorActionPreference = $true
+          $libobs = Get-ChildItem -Recurse obs-dist -Filter libobsConfig.cmake | Select-Object -First 1
+          $pthr   = Get-ChildItem -Recurse obs-dist -Filter w32-pthreadsConfig.cmake | Select-Object -First 1
+          cmake -S klipit -B build -G "Visual Studio 18 2026" -A x64 `
+            -DCMAKE_PREFIX_PATH="$env:QT_ROOT_DIR;${{ github.workspace }}/obs-dist" `
+            -Dlibobs_DIR="$($libobs.DirectoryName)" -Dw32-pthreads_DIR="$($pthr.DirectoryName)" `
+            -DFFMPEG_ROOT="${{ github.workspace }}/obs-dist/ffmpeg"
+          cmake --build build --config Release --parallel
+
+      - name: Unit tests
+        timeout-minutes: 10
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'; $PSNativeCommandUseErrorActionPreference = $true
+          $env:PATH = "$env:QT_ROOT_DIR\bin;${{ github.workspace }}\obs-dist\bin\64bit;$env:PATH"
+          $env:QT_QPA_PLATFORM = "offscreen"
+          ctest --test-dir build -C Release -R unit --output-on-failure --timeout 300
+
+      # ------------------------------------------------------------ package
+      - name: Assemble app folder
+        working-directory: klipit
+        shell: pwsh
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: |
+          $ErrorActionPreference = 'Stop'; $PSNativeCommandUseErrorActionPreference = $true
+          ./tools/package_windows.ps1 -ObsInstall "${{ github.workspace }}/obs-dist" `
+            -AppExe "${{ github.workspace }}/build/bin/Release/KlipIt.exe" `
+            -QtBin "$env:QT_ROOT_DIR/bin" -Out "${{ github.workspace }}/dist/KlipIt" -ObsVersion "$env:OBS_VERSION"
+
+      - name: Engine test on Windows (real capture engine, D3D11 software renderer)
+        timeout-minutes: 15
+        shell: pwsh
+        run: |
+          $bin = "${{ github.workspace }}/dist/KlipIt/bin/64bit"
+          Copy-Item build/tests/Release/klipit_engine_test.exe $bin
+          Push-Location $bin
+          $log = "$env:RUNNER_TEMP\engine-test.txt"
+          try { & .\klipit_engine_test.exe -platform windows -o "$log,txt" -o "-,txt" } finally { Pop-Location; Remove-Item "$bin/klipit_engine_test.exe" -ErrorAction SilentlyContinue }
+          $text = if (Test-Path $log) { Get-Content $log -Raw } else { "" }
+          if ($text -notmatch 'Totals: \d+ passed, 0 failed') { throw "Windows engine test failed, see the log above" }
+
+      - name: Build installer (Inno Setup)
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'; $PSNativeCommandUseErrorActionPreference = $true
+          choco install innosetup -y --no-progress
+          & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" `
+            /DSourceDir="${{ github.workspace }}\dist\KlipIt" /DAppVersion="${{ steps.ver.outputs.version }}" `
+            klipit\installer\KlipIt.iss
+          Move-Item klipit\dist\KlipIt-*-Setup.exe dist\
+
+      - name: Portable zip
+        shell: pwsh
+        run: Compress-Archive -Path dist\KlipIt\* -DestinationPath "dist\KlipIt-${{ steps.ver.outputs.version }}-portable.zip"
+
+      - uses: actions/upload-artifact@v6
+        with:
+          name: KlipIt-${{ steps.ver.outputs.version }}-windows-x64
+          path: |
+            dist/KlipIt-*-Setup.exe
+            dist/KlipIt-*-portable.zip
+
+      - name: Publish release (version tags only)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/KlipIt-*-Setup.exe
+            dist/KlipIt-*-portable.zip
+
+  linux-tests:
+    # Quick feedback: the same engine code against Ubuntu's libobs.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v6
+      - name: Install dependencies
+        run: |
+          sudo apt-get -o Acquire::Retries=3 update
+          sudo apt-get -o Acquire::Retries=3 install -y --no-install-recommends libobs-dev obs-studio qt6-base-dev qt6-multimedia-dev \
+            libavformat-dev libavcodec-dev libswscale-dev libavutil-dev libgl1-mesa-dev xvfb ffmpeg ninja-build pkg-config
+      - run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo && cmake --build build
+      - run: ./build/tests/klipit_unit_tests -platform offscreen
+      - run: ./tests/run_engine_test.sh build

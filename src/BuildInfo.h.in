@@ -1,0 +1,5 @@
+#pragma once
+#define KL_APP_NAME    "@APP_NAME@"
+#define KL_APP_EXE     "@APP_EXE@"
+#define KL_APP_ORG     "@APP_ORG@"
+#define KL_APP_VERSION "@APP_VERSION@"
