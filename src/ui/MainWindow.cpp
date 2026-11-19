@@ -160,7 +160,7 @@ MainWindow::MainWindow() {
     addPage("settings", new SettingsPage);
     addPage("plugins", new PluginsPage);
     showPage(qEnvironmentVariable("KLIPIT_PAGE", "home"));   // KLIPIT_PAGE / KLIPIT_OPEN: start on a page or clip (used for screenshots)
-    if (qEnvironmentVariableIsSet("KLIPIT_OPEN")) QTimer::singleShot(500, this, [this] { openClip(qEnvironmentVariable("KLIPIT_OPEN")); });
+    if (!qEnvironmentVariable("KLIPIT_OPEN").isEmpty()) QTimer::singleShot(500, this, [this] { openClip(qEnvironmentVariable("KLIPIT_OPEN")); });
 
     m_sound = new QSoundEffect(this);
     m_sound->setSource(QUrl("qrc:/sounds/clip.wav"));

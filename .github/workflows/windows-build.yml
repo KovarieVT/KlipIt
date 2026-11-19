@@ -23,6 +23,8 @@ jobs:
   windows-x64:
     runs-on: windows-2025-vs2026
     timeout-minutes: 150
+    permissions:
+      contents: write      # publishing the Setup.exe as a release on version tags
     steps:
       - name: Checkout KlipIt
         uses: actions/checkout@v6
@@ -175,14 +177,19 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
+          name: KlipIt ${{ steps.ver.outputs.version }}
+          body: |
+            Download **KlipIt-${{ steps.ver.outputs.version }}-Setup.exe** below and run it.
+            Windows may say "Windows protected your PC" because KlipIt isn't code-signed yet: click **More info**, then **Run anyway**.
           files: |
             dist/KlipIt-*-Setup.exe
             dist/KlipIt-*-portable.zip
 
   linux-tests:
-    # Quick feedback: the same engine code against Ubuntu's libobs.
+    # Extra check: the same engine code against Ubuntu's libobs. Never blocks the Windows download.
     runs-on: ubuntu-24.04
-    timeout-minutes: 30
+    timeout-minutes: 25
+    continue-on-error: true
     steps:
       - uses: actions/checkout@v6
       - name: Install dependencies

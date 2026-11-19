@@ -230,6 +230,7 @@ EditorPage::EditorPage(QWidget *parent) : QWidget(parent) {
 }
 
 void EditorPage::open(const QString &path) {
+    if (path.isEmpty() || !QFileInfo::exists(path)) return;
     m_player->stop();
     m_path = path;
     m_duration = 0;
