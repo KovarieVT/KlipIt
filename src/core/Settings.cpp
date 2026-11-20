@@ -18,7 +18,7 @@ QJsonObject Settings::defaults() {
         {"general", QJsonObject{
             {"startWithWindows", false},
             {"closeToTray", true},
-            {"clipSound", true},          // the clip-saved chime, played at 50 % volume
+            {"clipSound", true},          // the clip-saved beep, played at 50 % volume
             {"notifications", true},      // the "Clip saved" pop-up
             {"animations", true},         // splash screen and decorative animations
         }},

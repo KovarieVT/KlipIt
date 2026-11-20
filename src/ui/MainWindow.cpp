@@ -164,7 +164,7 @@ MainWindow::MainWindow() {
 
     m_sound = new QSoundEffect(this);
     m_sound->setSource(QUrl("qrc:/sounds/clip.wav"));
-    m_sound->setVolume(0.5f);   // the clip chime plays at 50 % volume
+    m_sound->setVolume(0.5f);   // the clip beep plays at 50 % volume
 
     connect(&rec, &Recorder::stateChanged, this, &MainWindow::refreshStatus);
     connect(&rec, &Recorder::clipSaved, this, &MainWindow::onClipSaved);
