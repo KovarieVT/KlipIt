@@ -40,7 +40,10 @@ OutputBaseFilename=KlipIt-{#AppVersion}-Setup
 SetupIconFile=assets\setup.ico
 UninstallDisplayIcon={app}\bin\64bit\{#AppExe}
 UninstallDisplayName={#AppName}
-WizardStyle=modern
+; Forced dark mode (Inno Setup 6.6+): every control, including checkboxes, radio buttons and
+; text boxes, is drawn with light text on a dark background.
+WizardStyle=modern dark hidebevels
+WizardBackColor=#0B090D
 WizardSizePercent=115
 WizardImageFile=assets\wizard_side_100.bmp,assets\wizard_side_125.bmp,assets\wizard_side_150.bmp,assets\wizard_side_200.bmp
 WizardSmallImageFile=assets\wizard_small_100.bmp,assets\wizard_small_125.bmp,assets\wizard_small_150.bmp,assets\wizard_small_200.bmp
@@ -95,60 +98,41 @@ Type: filesandordirs; Name: "{app}\obs-plugins"
 Type: filesandordirs; Name: "{app}\data"
 
 [Code]
-const
-  { Inno colours are BGR }
-  ColMidnight = $0D090B;   { #0B090D }
-  ColObsidian = $191115;   { #151119 }
-  ColCharcoal = $251B20;   { #201B25 }
-  ColBone     = $E5E1E9;   { #E9E1E5 }
-  ColSilver   = $BFB2B8;   { #B8B2BF }
-  ColCrimson  = $482AB5;   { #B52A48 }
-
 var
   ThemePage: TInputOptionWizardPage;
 
+{ All wizard text in white on the obsidian background }
+procedure WhiteText;
+begin
+  WizardForm.WelcomeLabel1.Font.Color := clWhite;
+  WizardForm.WelcomeLabel1.Font.Name := 'Georgia';
+  WizardForm.WelcomeLabel2.Font.Color := clWhite;
+  WizardForm.FinishedHeadingLabel.Font.Color := clWhite;
+  WizardForm.FinishedHeadingLabel.Font.Name := 'Georgia';
+  WizardForm.FinishedLabel.Font.Color := clWhite;
+  WizardForm.PageNameLabel.Font.Color := clWhite;
+  WizardForm.PageNameLabel.Font.Name := 'Georgia';
+  WizardForm.PageDescriptionLabel.Font.Color := clWhite;
+  WizardForm.SelectDirLabel.Font.Color := clWhite;
+  WizardForm.SelectDirBrowseLabel.Font.Color := clWhite;
+  WizardForm.DiskSpaceLabel.Font.Color := clWhite;
+  WizardForm.DirEdit.Font.Color := clWhite;
+  WizardForm.LicenseLabel1.Font.Color := clWhite;
+  WizardForm.LicenseMemo.Font.Color := clWhite;
+  WizardForm.LicenseAcceptedRadio.Font.Color := clWhite;
+  WizardForm.LicenseNotAcceptedRadio.Font.Color := clWhite;
+  WizardForm.SelectTasksLabel.Font.Color := clWhite;
+  WizardForm.TasksList.Font.Color := clWhite;
+  WizardForm.ReadyLabel.Font.Color := clWhite;
+  WizardForm.ReadyMemo.Font.Color := clWhite;
+  WizardForm.PreparingLabel.Font.Color := clWhite;
+  WizardForm.StatusLabel.Font.Color := clWhite;
+  WizardForm.FilenameLabel.Font.Color := clWhite;
+  WizardForm.RunList.Font.Color := clWhite;
+end;
 
 procedure InitializeWizard;
 begin
-  { Gothic look: obsidian panels, bone-white text, crimson headings }
-  WizardForm.Color := ColMidnight;
-  WizardForm.MainPanel.Color := ColObsidian;
-  WizardForm.InnerPage.Color := ColMidnight;
-  WizardForm.WelcomePage.Color := ColMidnight;
-  WizardForm.FinishedPage.Color := ColMidnight;
-  WizardForm.Bevel.Visible := False;
-  WizardForm.Bevel1.Visible := False;
-  WizardForm.WelcomeLabel1.Font.Color := ColCrimson;
-  WizardForm.WelcomeLabel1.Font.Name := 'Georgia';
-  WizardForm.WelcomeLabel2.Font.Color := ColBone;
-  WizardForm.FinishedHeadingLabel.Font.Color := ColCrimson;
-  WizardForm.FinishedHeadingLabel.Font.Name := 'Georgia';
-  WizardForm.FinishedLabel.Font.Color := ColBone;
-  WizardForm.PageNameLabel.Font.Color := ColCrimson;
-  WizardForm.PageNameLabel.Font.Name := 'Georgia';
-  WizardForm.PageDescriptionLabel.Font.Color := ColSilver;
-  WizardForm.SelectDirLabel.Font.Color := ColBone;
-  WizardForm.SelectDirBrowseLabel.Font.Color := ColBone;
-  WizardForm.DiskSpaceLabel.Font.Color := ColSilver;
-  WizardForm.DirEdit.Color := ColCharcoal;
-  WizardForm.DirEdit.Font.Color := ColBone;
-  WizardForm.LicenseLabel1.Font.Color := ColBone;
-  WizardForm.LicenseMemo.Color := ColCharcoal;
-  WizardForm.LicenseMemo.Font.Color := ColBone;
-  WizardForm.LicenseAcceptedRadio.Font.Color := ColBone;
-  WizardForm.LicenseNotAcceptedRadio.Font.Color := ColBone;
-  WizardForm.SelectTasksLabel.Font.Color := ColBone;
-  WizardForm.TasksList.Color := ColMidnight;
-  WizardForm.TasksList.Font.Color := ColBone;
-  WizardForm.ReadyLabel.Font.Color := ColBone;
-  WizardForm.ReadyMemo.Color := ColCharcoal;
-  WizardForm.ReadyMemo.Font.Color := ColBone;
-  WizardForm.StatusLabel.Font.Color := ColBone;
-  WizardForm.FilenameLabel.Font.Color := ColSilver;
-  WizardForm.RunList.Color := ColMidnight;
-  WizardForm.RunList.Font.Color := ColBone;
-  WizardForm.ProgressGauge.Height := ScaleY(16);
-
   ThemePage := CreateInputOptionPage(wpSelectDir,
     'Choose your theme', 'How KlipIt looks. You can change it any time in Settings.',
     'Pick a colour theme:', True, False);
@@ -158,10 +142,9 @@ begin
   ThemePage.Add('Blue');
   ThemePage.Add('Purple');
   ThemePage.SelectedValueIndex := 0;
-  ThemePage.Surface.Color := ColMidnight;
-  ThemePage.SubCaptionLabel.Font.Color := ColBone;
-  ThemePage.CheckListBox.Color := ColMidnight;
-  ThemePage.CheckListBox.Font.Color := ColBone;
+  ThemePage.SubCaptionLabel.Font.Color := clWhite;
+  ThemePage.CheckListBox.Font.Color := clWhite;
+  WhiteText;
 end;
 
 function ThemeId: String;
