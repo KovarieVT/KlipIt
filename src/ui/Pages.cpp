@@ -1,4 +1,5 @@
 #include "ui/Pages.h"
+#include "core/Account.h"
 #include "core/Autostart.h"
 #include "core/ClipLibrary.h"
 #include "core/GameDetector.h"
@@ -8,6 +9,7 @@
 #include "core/Paths.h"
 #include "core/Settings.h"
 #include "core/Theme.h"
+#include "core/WebUploader.h"
 #include "engine/Recorder.h"
 #include "ui/Art.h"
 #include "ui/HotkeyEdit.h"
@@ -637,6 +639,90 @@ protected:
 private:
     theme::Palette m_p;
 };
+
+// ------------------------------------------------------------------ Account
+AccountPage::AccountPage(QWidget *parent)
+    : Page(tr("Account"), tr("Sign in with your KlipIt website account and the clips you save show up in My clips on the website, "
+                             "private to you."), true, parent) {
+    QVBoxLayout *c;
+    m_body->addWidget(card(&c, tr("KlipIt account")));
+    m_who = new QLabel;
+    m_who->setObjectName("AccountName");
+    m_who->setWordWrap(true);
+    m_detail = hint({});
+    m_error = new QLabel;
+    m_error->setObjectName("Warn");
+    m_error->setWordWrap(true);
+    c->addWidget(m_who);
+    c->addWidget(m_detail);
+    c->addWidget(m_error);
+    auto *row = new QHBoxLayout;
+    m_signIn = primary(tr("Sign in"));
+    m_create = new QPushButton(tr("Create an account"));
+    m_cancel = new QPushButton(tr("Cancel"));
+    m_open = primary(tr("Open My clips"));
+    m_signOut = new QPushButton(tr("Sign out"));
+    for (QPushButton *b : {m_signIn, m_create, m_cancel, m_open, m_signOut}) row->addWidget(b);
+    row->addStretch();
+    c->addLayout(row);
+    connect(m_signIn, &QPushButton::clicked, this, [] { Account::instance().signIn(false); });
+    connect(m_create, &QPushButton::clicked, this, [] { Account::instance().signIn(true); });
+    connect(m_cancel, &QPushButton::clicked, this, [] { Account::instance().cancelSignIn(); });
+    connect(m_open, &QPushButton::clicked, this, [] { QDesktopServices::openUrl(QUrl(Account::siteUrl() + "/clips.html")); });
+    connect(m_signOut, &QPushButton::clicked, this, [this] {
+        if (QMessageBox::question(this, tr("Sign out"), tr("Sign out of your KlipIt account?\n\nClips already on your website stay there.")) ==
+            QMessageBox::Yes)
+            Account::instance().signOut();
+    });
+
+    m_body->addWidget(card(&c, tr("Sending clips"), tr("Clips go to My clips on the website. Only you can see them there.")));
+    m_auto = check(tr("Send new clips to my website automatically"), "cloud.autoSend", false);
+    c->addWidget(m_auto);
+    m_status = new QLabel;
+    m_status->setWordWrap(true);
+    c->addWidget(m_status);
+    c->addWidget(hint(tr("To send an older clip, right-click it in your library and choose Send to my website. Each video can be up to "
+                         "4 GB; your Wix plan sets how much space the website has in total.")));
+    m_body->addStretch();
+
+    auto &up = WebUploader::instance();
+    connect(&Account::instance(), &Account::changed, this, &AccountPage::refresh);
+    connect(&up, &WebUploader::queueChanged, this, &AccountPage::refresh);
+    connect(&up, &WebUploader::progress, this, [this](const QString &, int pct) { m_percent = pct; refresh(); });
+    refresh();
+}
+
+void AccountPage::refresh() {
+    const auto &a = Account::instance();
+    const bool in = a.signedIn(), busy = a.signingIn();
+    if (in) {
+        m_who->setText(tr("Signed in as %1").arg(a.name()));
+        m_detail->setText(a.email());
+    } else if (busy) {
+        m_who->setText(tr("Finish signing in in your browser"));
+        m_detail->setText(tr("Your browser opened the KlipIt website. Log in there and KlipIt signs in by itself."));
+    } else {
+        m_who->setText(tr("You're not signed in"));
+        m_detail->setText(tr("Use the account from the KlipIt website, or create one. It's free."));
+    }
+    m_error->setText(a.lastError());
+    m_error->setVisible(!in && !busy && !a.lastError().isEmpty());
+    m_signIn->setVisible(!in && !busy);
+    m_create->setVisible(!in && !busy);
+    m_cancel->setVisible(busy);
+    m_open->setVisible(in);
+    m_signOut->setVisible(in);
+    m_auto->setEnabled(in);
+
+    const auto &up = WebUploader::instance();
+    QString status;
+    if (!in) status = tr("Sign in to send clips.");
+    else if (up.isBusy()) {
+        status = tr("Sending “%1” · %2%").arg(QFileInfo(up.current()).completeBaseName()).arg(m_percent);
+        if (up.pending() > 1) status += tr("  (%n more waiting)", nullptr, up.pending() - 1);
+    } else status = tr("Nothing waiting to send.");
+    m_status->setText(status);
+}
 
 SettingsPage::SettingsPage(QWidget *parent) : Page(tr("Settings"), {}, true, parent) {
     QVBoxLayout *c;

@@ -1,6 +1,9 @@
 #include "ui/ClipGrid.h"
 #include "core/MediaTools.h"
+#include "core/Account.h"
 #include "core/HotkeyManager.h"
+#include "core/WebUploader.h"
+#include <QMessageBox>
 #include "core/Settings.h"
 #include "core/Theme.h"
 
@@ -189,6 +192,19 @@ void ClipGrid::showMenu(const QPoint &pos) {
     QMenu m(this);
     m.addAction(c->isVideo() ? tr("Open in editor") : tr("Open"), this, [this, path] { Q_EMIT openRequested(path); });
     m.addAction(tr("Copy clip (paste into Discord or a folder)"), this, [path] { clipactions::copyToClipboard(path); });
+    if (c->isVideo()) {
+        auto &up = WebUploader::instance();
+        if (!Account::instance().signedIn()) {
+            m.addAction(tr("Sign in to send clips to your website..."), this, [] { Account::instance().signIn(); });
+        } else if (up.isQueued(path)) {
+            m.addAction(tr("Sending to your website..."))->setEnabled(false);
+        } else {
+            m.addAction(c->webId.isEmpty() ? tr("Send to my website") : tr("Send to my website again"), this, [this, path] {
+                const QString err = WebUploader::instance().send(path);
+                if (!err.isEmpty()) QMessageBox::information(this, tr("Can't send this clip"), err);
+            });
+        }
+    }
     m.addAction(c->favorite ? tr("Remove from favorites") : tr("Add to favorites"), this, [path, fav = c->favorite] {
         ClipLibrary::instance().setFavorite(path, !fav);
     });

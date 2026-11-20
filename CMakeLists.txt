@@ -6,7 +6,7 @@ cmake_minimum_required(VERSION 3.22)
 set(APP_NAME    "KlipIt")
 set(APP_EXE     "KlipIt")
 set(APP_ORG     "KlipIt")
-set(APP_VERSION "1.0.3")
+set(APP_VERSION "1.0.4")
 
 project(KlipIt VERSION ${APP_VERSION} LANGUAGES C CXX)
 
@@ -18,7 +18,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 option(KLIPIT_BUILD_TESTS "Build tests" ON)
 
-find_package(Qt6 6.4 REQUIRED COMPONENTS Widgets Multimedia MultimediaWidgets Concurrent Test)
+find_package(Qt6 6.4 REQUIRED COMPONENTS Widgets Multimedia MultimediaWidgets Concurrent Network Test)
 
 # --- libobs (capture, GPU encoders, replay buffer) -------------------------
 find_package(libobs CONFIG QUIET)
@@ -61,11 +61,11 @@ file(GLOB KL_HEADERS CONFIGURE_DEPENDS src/core/*.h src/engine/*.h src/ui/*.h)
 add_library(klipit_core STATIC ${KL_SOURCES} ${KL_HEADERS} resources/resources.qrc)
 target_include_directories(klipit_core PUBLIC src ${CMAKE_BINARY_DIR}/generated)
 target_link_libraries(klipit_core PUBLIC
-    Qt6::Widgets Qt6::Multimedia Qt6::MultimediaWidgets Qt6::Concurrent ${LIBOBS_TARGET} klipit_ffmpeg)
+    Qt6::Widgets Qt6::Multimedia Qt6::MultimediaWidgets Qt6::Concurrent Qt6::Network ${LIBOBS_TARGET} klipit_ffmpeg)
 
 if(WIN32)
     target_compile_definitions(klipit_core PUBLIC NOMINMAX WIN32_LEAN_AND_MEAN UNICODE _UNICODE)
-    target_link_libraries(klipit_core PUBLIC dbghelp user32 dwmapi psapi version)
+    target_link_libraries(klipit_core PUBLIC dbghelp user32 dwmapi psapi version crypt32)
 endif()
 if(MSVC)
     target_compile_options(klipit_core PUBLIC /W4 /permissive- /utf-8 /wd4100 /wd4996 /Zi)

@@ -72,6 +72,7 @@ void ClipLibrary::rescan() {
         c.title = m.value("title").toString();
         c.favorite = m.value("favorite").toBool();
         c.highlight = m.value("highlight").toBool();
+        c.webId = m.value("web").toString();
         if (qint64(m.value("size").toDouble()) == c.size) {
             c.duration = m.value("duration").toDouble();
             c.width = m.value("w").toInt();
@@ -158,6 +159,16 @@ void ClipLibrary::setFavorite(const QString &path, bool on) {
     m_meta[r] = m;
     saveMeta();
     for (auto &c : m_items) if (c.path == path) c.favorite = on;
+    Q_EMIT changed();
+}
+
+void ClipLibrary::setWebId(const QString &path, const QString &id) {
+    const QString r = rel(path);
+    QJsonObject m = m_meta.value(r).toObject();
+    m["web"] = id;
+    m_meta[r] = m;
+    saveMeta();
+    for (auto &c : m_items) if (c.path == path) c.webId = id;
     Q_EMIT changed();
 }
 

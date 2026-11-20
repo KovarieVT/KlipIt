@@ -93,6 +93,19 @@ private:
     QPushButton *m_toggle;
 };
 
+// Your KlipIt website account: sign in, and clips go to My clips on the website.
+class AccountPage : public Page {
+    Q_OBJECT
+public:
+    explicit AccountPage(QWidget *parent = nullptr);
+private:
+    void refresh();
+    QLabel *m_who, *m_detail, *m_error, *m_status;
+    QPushButton *m_signIn, *m_create, *m_cancel, *m_open, *m_signOut;
+    QCheckBox *m_auto;
+    int m_percent = 0;
+};
+
 class SettingsPage : public Page {
     Q_OBJECT
 public:

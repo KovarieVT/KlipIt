@@ -1,5 +1,6 @@
 // KlipIt — entry point
 #include "BuildInfo.h"
+#include "core/Account.h"
 #include "core/Autostart.h"
 #include "core/ClipLibrary.h"
 #include "core/GameDetector.h"
@@ -71,6 +72,7 @@ int main(int argc, char **argv) {
     instance.listen(server);
 
     Settings::instance().load(Paths::configFile());
+    Account::instance().load();
     applyInstallerChoices();
     Logger::init();
     theme::loadFonts();

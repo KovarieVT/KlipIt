@@ -1,4 +1,7 @@
 #include "ui/EditorPage.h"
+#include "core/Account.h"
+#include "core/Settings.h"
+#include "core/WebUploader.h"
 #include "core/ClipLibrary.h"
 #include "core/MediaTools.h"
 #include "core/Paths.h"
@@ -323,6 +326,7 @@ void EditorPage::saveTrim() {
         return;
     }
     ClipLibrary::instance().add(dst, game, "trim", highlight, base + tr(" (trim)"));
+    if (Account::instance().signedIn() && Settings::instance().b("cloud.autoSend")) WebUploader::instance().send(dst);
     Toast::show(tr("Trim saved"), tr("Saved as a new clip. The original is still there."));
     Q_EMIT openClip(dst);
 }

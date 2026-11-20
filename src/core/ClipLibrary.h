@@ -19,6 +19,7 @@ struct ClipItem {
     double duration = 0;   // seconds (0 for screenshots or not probed yet)
     int width = 0, height = 0;
     bool favorite = false, highlight = false;
+    QString webId;         // the clip's entry on the KlipIt website, once sent
     bool isVideo() const { return kind != "screenshot"; }
     QString displayTitle() const;
 };
@@ -46,6 +47,7 @@ public:
     void add(const QString &path, const QString &game, const QString &kind, bool highlight = false, const QString &title = {});
     void setFavorite(const QString &path, bool on);
     void setTitle(const QString &path, const QString &title);
+    void setWebId(const QString &path, const QString &id);   // marks a clip as sent to the website
     bool remove(const QString &path, QString *error = nullptr);   // moves to the Recycle Bin when possible
 
     QImage thumbnail(const QString &path);           // cached; empty until ready (then thumbnailReady fires)

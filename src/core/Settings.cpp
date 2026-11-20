@@ -44,6 +44,7 @@ QJsonObject Settings::defaults() {
             {"micVolume", 100},
         }},
         {"clips", QJsonObject{{"folder", Paths::defaultClips()}}},
+        {"cloud", QJsonObject{{"autoSend", true}}},   // send new clips to My clips on the website when signed in
         {"hotkeys", QJsonObject{
             {"saveClip", "F8"},
             {"toggleRecording", "F9"},

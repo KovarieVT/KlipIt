@@ -587,7 +587,6 @@ QString Recorder::bestEncoder(const QString &codec) const {
 
 void Recorder::ensureEncoders(QString *error) {
     if (m_venc && !m_aenc.empty()) return;
-    auto &s = Settings::instance();
     const QString codec = effective("codec").toString() == "hevc" ? "hevc" : "h264";
     QString id = m_forceCpu ? QStringLiteral("obs_x264") : effective("encoder").toString();
     if (id.isEmpty() || id == "auto" || !obs_get_encoder_codec(id.toUtf8().constData())) id = bestEncoder(codec);

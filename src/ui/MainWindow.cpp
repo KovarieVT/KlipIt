@@ -1,9 +1,11 @@
 #include "ui/MainWindow.h"
+#include "core/Account.h"
 #include "core/ClipLibrary.h"
 #include "core/HotkeyManager.h"
 #include "core/MediaTools.h"
 #include "core/Settings.h"
 #include "core/Theme.h"
+#include "core/WebUploader.h"
 #include "engine/Recorder.h"
 #include "ui/Art.h"
 #include "ui/EditorPage.h"
@@ -73,9 +75,9 @@ MainWindow::MainWindow() {
         {"home", tr("Home"), "☾"}, {"library", tr("Library"), "▤"}, {"games", tr("Games"), "♜"}, {"capture", tr("Capture"), "◉"},
         {"replay", tr("Instant Replay"), "↺"}, {"clips", tr("Clips"), "▶"}, {"screenshots", tr("Screenshots"), "▣"},
         {"editor", tr("Video Editor"), "✂"}, {"favorites", tr("Favorites"), "★"}, {"highlights", tr("Highlights"), "✦"},
-        {"settings", tr("Settings"), "⚙"}, {"plugins", tr("Plugins"), "⧉"}};
+        {"account", tr("Sign in"), "◈"}, {"settings", tr("Settings"), "⚙"}, {"plugins", tr("Plugins"), "⧉"}};
     for (const auto &n : nav) {
-        if (n.id == "settings") sl->addStretch();
+        if (n.id == "account") sl->addStretch();
         auto *b = new QPushButton(QStringLiteral("%1   %2").arg(n.glyph, n.label));
         b->setObjectName("NavButton");
         b->setCheckable(true);
@@ -157,6 +159,7 @@ MainWindow::MainWindow() {
     addPage("editor", m_editor);
     addPage("favorites", new LibraryPage(tr("Favorites"), tr("Clips you starred. Right-click any clip to add it."), favs, false));
     addPage("highlights", new HighlightsPage);
+    addPage("account", new AccountPage);
     addPage("settings", new SettingsPage);
     addPage("plugins", new PluginsPage);
     showPage(qEnvironmentVariable("KLIPIT_PAGE", "home"));   // KLIPIT_PAGE / KLIPIT_OPEN: start on a page or clip (used for screenshots)
@@ -168,6 +171,32 @@ MainWindow::MainWindow() {
 
     connect(&rec, &Recorder::stateChanged, this, &MainWindow::refreshStatus);
     connect(&rec, &Recorder::clipSaved, this, &MainWindow::onClipSaved);
+
+    // ---- KlipIt website account
+    auto updateAccountNav = [this] {
+        const auto &a = Account::instance();
+        if (QPushButton *b = m_nav.value("account"))
+            b->setText(QStringLiteral("◈   %1").arg(a.signedIn() ? b->fontMetrics().elidedText(a.name(), Qt::ElideRight, 140) : tr("Sign in")));
+    };
+    connect(&Account::instance(), &Account::changed, this, updateAccountNav);
+    updateAccountNav();
+    connect(&Account::instance(), &Account::signInFinished, this, [this](bool ok, const QString &msg) {
+        if (ok) {
+            Toast::show(tr("Signed in"), tr("Clips you save now show up in My clips on your website."));
+            showPage("account");
+            showNormal();
+            raise();
+            activateWindow();
+        } else {
+            Toast::show(tr("Sign-in didn't finish"), msg);
+        }
+    });
+    connect(&WebUploader::instance(), &WebUploader::sent, this, [](const QString &, const QString &title) {
+        if (Settings::instance().b("general.notifications")) Toast::show(tr("Sent to your website"), title);
+    });
+    connect(&WebUploader::instance(), &WebUploader::failed, this, [](const QString &, const QString &title, const QString &msg) {
+        Toast::show(tr("Couldn't send “%1”").arg(title), msg);
+    });
     connect(&rec, &Recorder::recordingSaved, this, [this](const QString &path, const QString &) {
         if (Settings::instance().b("general.notifications"))
             Toast::show(tr("Recording saved"), QFileInfo(path).completeBaseName(), QPixmap::fromImage(media::thumbnail(path, 2.0, 240)));
@@ -222,6 +251,7 @@ void MainWindow::openClip(const QString &path) {
 void MainWindow::onClipSaved(const QString &path, const QString &game, bool highlight) {
     auto &s = Settings::instance();
     if (s.b("general.clipSound")) m_sound->play();
+    if (Account::instance().signedIn() && s.b("cloud.autoSend")) WebUploader::instance().send(path);
     if (s.b("general.notifications")) {
         const media::Info info = media::probe(path);
         Toast::show(highlight ? tr("Highlight saved") : tr("Clip saved"),

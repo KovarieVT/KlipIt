@@ -25,6 +25,7 @@ QPushButton#NavButton:checked { background: qlineargradient(x1:0, y1:0, x2:1, y2
 #Muted { color: @muted; }
 #Hint { color: @muted; font-size: 9pt; }
 #Warn { color: @accenthover; font-size: 9pt; }
+#AccountName { font-size: 13pt; font-weight: 600; color: @text; }
 #BigNumber { font-family: "@headingfont"; font-size: 22pt; color: @text; }
 
 /* ---- cards ---- */
