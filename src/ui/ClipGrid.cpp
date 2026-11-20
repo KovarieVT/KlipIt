@@ -1,5 +1,6 @@
 #include "ui/ClipGrid.h"
 #include "core/MediaTools.h"
+#include "core/HotkeyManager.h"
 #include "core/Settings.h"
 #include "core/Theme.h"
 
@@ -167,7 +168,7 @@ void ClipGrid::paintEvent(QPaintEvent *e) {
     p.setFont(f);
     p.drawText(viewport()->rect().adjusted(20, 20, -20, -20), Qt::AlignCenter | Qt::TextWordWrap,
                m_empty.isEmpty() ? tr("Nothing here yet. Play a game and press %1 to save your first clip.")
-                                       .arg(Settings::instance().s("hotkeys.saveClip"))
+                                       .arg(HotkeyManager::instance().displayText("saveClip"))
                                  : m_empty);
 }
 

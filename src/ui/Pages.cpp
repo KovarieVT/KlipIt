@@ -11,6 +11,7 @@
 #include "engine/Recorder.h"
 #include "ui/Art.h"
 #include "ui/HotkeyEdit.h"
+#include "ui/MonitorPicker.h"
 #include "BuildInfo.h"
 
 #include <QApplication>
@@ -78,8 +79,7 @@ static QPushButton *primary(const QString &text) {
 }
 
 static QString keyText(const QString &id) {
-    const QString k = HotkeyManager::instance().binding(id).toString(QKeySequence::NativeText);
-    return k.isEmpty() ? QObject::tr("no key") : k;
+    return HotkeyManager::instance().displayText(id);
 }
 
 // ------------------------------------------------------------------ Page
@@ -424,20 +424,16 @@ void GamesPage::showProfile(const QString &key) {
 // ------------------------------------------------------------------ Capture
 CapturePage::CapturePage(QWidget *parent) : Page(tr("Capture"), tr("How KlipIt records. GPU encoding keeps your game's frame rate up."), true, parent) {
     QVBoxLayout *c;
+    m_body->addWidget(card(&c, tr("Monitor"), tr("Pick the monitor KlipIt records. In game mode the game itself is always captured, so this sets the video size "
+                                               "and the screen recorded if a game blocks game capture. In screen mode, this is the screen that's recorded.")));
+    c->addWidget(new MonitorPicker);
+
     m_body->addWidget(card(&c, tr("What to record")));
     auto *mode = combo("capture.mode", {{tr("Games, automatically (recommended)"), "game"}, {tr("My whole screen, all the time"), "screen"}}, true);
     c->addWidget(mode);
     c->addWidget(hint(tr("Game mode hooks straight into the game, like Medal and SteelSeries Moments: it records only the game, "
                          "never Discord, browsers or other windows. If a game's anti-cheat blocks that, KlipIt records the game's monitor instead.")));
     c->addWidget(check(tr("Only keep instant replay running while a game is open"), "capture.onlyWhenGame", true));
-    auto *mon = new QHBoxLayout;
-    mon->addWidget(new QLabel(tr("Monitor for screen recording")));
-    QList<QPair<QString, QVariant>> monitors;
-    const auto mons = Recorder::monitors();
-    for (int i = 0; i < mons.size(); ++i) monitors << qMakePair(mons[i].name, QVariant(i));
-    mon->addWidget(combo("capture.monitor", monitors, true));
-    mon->addStretch();
-    c->addLayout(mon);
     c->addWidget(check(tr("Show the mouse pointer in recordings"), "capture.cursor", true));
 
     m_body->addWidget(card(&c, tr("Video")));
@@ -490,6 +486,9 @@ ReplayPage::ReplayPage(QWidget *parent)
     connect(m_toggle, &QPushButton::clicked, this, [] { Recorder::instance().setBufferPaused(!Recorder::instance().bufferPausedByUser()); });
     srow->addWidget(m_toggle);
     c->addLayout(srow);
+
+    m_body->addWidget(card(&c, tr("Monitor"), tr("Which monitor KlipIt records. Automatic follows your game.")));
+    c->addWidget(new MonitorPicker);
 
     m_body->addWidget(card(&c, tr("Clip length"), tr("How much of what just happened gets saved when you press the hotkey. Clips can be up to 20 minutes.")));
     auto *grid = new QGridLayout;
@@ -670,7 +669,7 @@ SettingsPage::SettingsPage(QWidget *parent) : Page(tr("Settings"), {}, true, par
     row->addStretch();
     c->addLayout(row);
 
-    m_body->addWidget(card(&c, tr("Hotkeys"), tr("These work everywhere, even inside full-screen games. Click a box and press the new key.")));
+    m_body->addWidget(card(&c, tr("Hotkeys"), tr("These work everywhere, even inside full-screen games. Click a box and press any key, numpad keys like Num * included.")));
     auto *form = new QFormLayout;
     form->setSpacing(10);
     auto *msg = new QLabel;

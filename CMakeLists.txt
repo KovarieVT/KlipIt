@@ -6,7 +6,7 @@ cmake_minimum_required(VERSION 3.22)
 set(APP_NAME    "KlipIt")
 set(APP_EXE     "KlipIt")
 set(APP_ORG     "KlipIt")
-set(APP_VERSION "1.0.1")
+set(APP_VERSION "1.0.2")
 
 project(KlipIt VERSION ${APP_VERSION} LANGUAGES C CXX)
 

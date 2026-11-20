@@ -151,7 +151,7 @@ MainWindow::MainWindow() {
     addPage("capture", new CapturePage);
     addPage("replay", new ReplayPage);
     addPage("clips", new LibraryPage(tr("Clips"), tr("Your saved clips, trims and session recordings."), clips, false));
-    addPage("screenshots", new LibraryPage(tr("Screenshots"), tr("Press %1 in a game to take one.").arg(Settings::instance().s("hotkeys.screenshot")), shots, false));
+    addPage("screenshots", new LibraryPage(tr("Screenshots"), tr("Press %1 in a game to take one.").arg(HotkeyManager::instance().displayText("screenshot")), shots, false));
     m_editor = new EditorPage;
     connect(m_editor, &EditorPage::openClip, this, &MainWindow::openClip);
     addPage("editor", m_editor);
@@ -233,8 +233,8 @@ void MainWindow::onClipSaved(const QString &path, const QString &game, bool high
 }
 
 static QString keyName(const QString &id) {
-    const QString k = HotkeyManager::instance().binding(id).toString(QKeySequence::NativeText);
-    return k.isEmpty() ? QString() : QStringLiteral("  (%1)").arg(k);
+    const Hotkey k = HotkeyManager::instance().binding(id);
+    return k.isEmpty() ? QString() : QStringLiteral("  (%1)").arg(k.text);
 }
 
 void MainWindow::refreshStatus() {

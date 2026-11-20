@@ -1,5 +1,6 @@
 #include "engine/Recorder.h"
 #include "core/ClipLibrary.h"
+#include "core/HotkeyManager.h"
 #include "core/MediaTools.h"
 #include "core/Paths.h"
 #include "core/Settings.h"
@@ -112,12 +113,13 @@ QVector<MonitorInfo> Recorder::monitors() {
 
 QRect Recorder::targetMonitor() const {
     const auto mons = monitors();
-    if (m_game.valid() && !m_game.windowRect.isEmpty()) {
+    const int idx = Settings::instance().i("capture.display");
+    if (idx >= 0 && idx < mons.size()) return mons[idx].rect;   // the monitor you picked
+    if (m_game.valid() && !m_game.windowRect.isEmpty()) {     // automatic: the monitor the game is on
         const QPoint c = m_game.windowRect.center();
         for (const auto &m : mons) if (m.rect.contains(c)) return m.rect;
     }
-    const int idx = Settings::instance().i("capture.monitor");
-    return mons.value(qBound(0, idx, int(mons.size()) - 1)).rect;
+    return mons.first().rect;                                  // automatic with no game: the main monitor
 }
 
 // ------------------------------------------------------------------ lifecycle
@@ -476,7 +478,7 @@ void Recorder::onGameStarted(const GameInfo &g) {
     refresh();
     if (bufferActive())
         Q_EMIT notice(tr("Recording %1").arg(g.name), tr("Press %1 to save the last %2.")
-                      .arg(s.s("hotkeys.saveClip"), media::formatDuration(clipSeconds())));
+                      .arg(HotkeyManager::instance().displayText("saveClip"), media::formatDuration(clipSeconds())));
     if (effective("sessionRecording").toBool() && !recordingActive()) startRecording(true);
     Q_EMIT stateChanged();
 }
@@ -804,7 +806,7 @@ void Recorder::startRecording(bool session) {
     m_recPart = first;
     m_recStartMs = QDateTime::currentMSecsSinceEpoch();
     Q_EMIT notice(session ? tr("Recording the whole session") : tr("Recording started"),
-                  tr("Saved in parts of up to 20 minutes. Press %1 to stop.").arg(Settings::instance().s("hotkeys.toggleRecording")));
+                  tr("Saved in parts of up to 20 minutes. Press %1 to stop.").arg(HotkeyManager::instance().displayText("toggleRecording")));
     Q_EMIT stateChanged();
 }
 

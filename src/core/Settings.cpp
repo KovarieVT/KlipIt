@@ -26,7 +26,7 @@ QJsonObject Settings::defaults() {
         {"capture", QJsonObject{
             {"mode", "game"},             // game = detect games and hook them, screen = record a whole monitor
             {"onlyWhenGame", true},       // game mode: keep the buffer off while no game is open
-            {"monitor", 0},
+            {"display", -1},              // -1 = automatic (the monitor the game is on), 0.. = a specific monitor
             {"resolution", "1440"},       // native | 1440 | 1080 | 720 (never upscales)
             {"fps", 60},
             {"quality", "high"},          // low | medium | high | ultra

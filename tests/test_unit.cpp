@@ -46,14 +46,28 @@ private Q_SLOTS:
         auto &h = HotkeyManager::instance();
         h.registerAction("saveClip", "Save clip", [] {});
         h.registerAction("toggleRecording", "Record", [] {});
-        QVERIFY(HotkeyManager::toVirtualKey(Qt::Key_F8) == 0x77);
-        QVERIFY(HotkeyManager::toVirtualKey(Qt::Key_Shift) == 0);
-        QVERIFY(!h.conflictFor("toggleRecording", QKeySequence("F8")).isEmpty());   // already Save clip
-        QVERIFY(h.conflictFor("toggleRecording", QKeySequence("Ctrl+Shift+R")).isEmpty());
+        QCOMPARE(HotkeyManager::toVirtualKey(Qt::Key_F8), 0x77u);
+        QCOMPARE(HotkeyManager::toVirtualKey(Qt::Key_Shift), 0u);
+        QCOMPARE(HotkeyManager::toVirtualKey(Qt::Key_Asterisk, true), 0x6Au);     // numpad *
+        QCOMPARE(HotkeyManager::toVirtualKey(Qt::Key_5, true), 0x65u);            // numpad 5
+        // old settings ("F8") still read correctly
+        QCOMPARE(h.binding("saveClip").vk, 0x77u);
+        QCOMPARE(Hotkey::parse("Ctrl+F10").mods, 2u);
+        QCOMPARE(Hotkey::parse("Num+*").vk, 0x6Au);
+        // ANY key: numpad asterisk, with and without modifiers, round-trips through the settings file
+        const Hotkey star = Hotkey::fromKey(0x6A, 0);
+        QCOMPARE(star.text, QString("Num *"));
+        QCOMPARE(Hotkey::parse(star.stored()).vk, 0x6Au);
+        QCOMPARE(Hotkey::fromKey(0x6A, 2 | 4).text, QString("Ctrl+Shift+Num *"));
+        QCOMPARE(Hotkey::fromKey(0xB3, 0).text, QString("Play/Pause"));
+        QCOMPARE(Hotkey::fromKey(0x7C, 0).text, QString("F13"));
+        QVERIFY(!h.conflictFor("toggleRecording", Hotkey::fromKey(0x77, 0)).isEmpty());   // F8 is Save clip
+        QVERIFY(h.conflictFor("toggleRecording", Hotkey::fromKey(0x77, 2)).isEmpty());    // Ctrl+F8 is free
         h.suspend(true);
         QVERIFY(h.isSuspended());
-        QVERIFY(h.setBinding("toggleRecording", QKeySequence("F7")).isEmpty());
-        QCOMPARE(h.binding("toggleRecording"), QKeySequence("F7"));
+        QVERIFY(h.setBinding("toggleRecording", star).isEmpty());
+        QVERIFY(h.binding("toggleRecording").sameKeys(star));
+        QVERIFY(!h.conflictFor("saveClip", star).isEmpty());
         h.suspend(false);
         QVERIFY(!h.isSuspended());
     }
